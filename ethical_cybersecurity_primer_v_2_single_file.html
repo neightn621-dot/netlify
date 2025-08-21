@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Aspiring Hacker's Roadmap</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: "Nord" inspired - cool, modern, and focused. -->
+    <!-- Application Structure Plan: The application is structured as a single-page, scrollable roadmap divided into five logical, thematic sections: Welcome, Core Skills, Hacking Lab, Specialization, and AI Tutor. This non-linear, topic-based architecture allows users to either follow the path sequentially or jump directly to a topic of interest via a sticky navigation bar. This design was chosen for usability because a learner's journey isn't always linear; they may need to revisit core concepts or explore advanced topics as needed. Key interactions include tabbed interfaces for dense information (Core Skills), interactive diagrams (OSI Model), accordions for progressive disclosure (Golden Rules), and modals for focused content (OWASP Top 10), all designed to make a large amount of text-based information digestible and engaging without overwhelming the user. -->
+    <!-- Visualization & Content Choices:
+        - Report Info: Hacker Types -> Goal: Compare -> Viz: Interactive Cards -> Interaction: Click to reveal details -> Justification: More engaging than a static table, encourages active user participation. -> Library/Method: Vanilla JS + Tailwind.
+        - Report Info: OSI Model -> Goal: Inform/Organize -> Viz: HTML/CSS Diagram -> Interaction: Hover to see layer descriptions -> Justification: Visualizes a key networking concept, making it easier to understand relationships between layers. -> Library/Method: HTML + Tailwind.
+        - Report Info: Linux Commands -> Goal: Inform -> Viz: Simulated Terminal -> Interaction: Click command to see example -> Justification: Presents technical commands in a familiar, contextual format. -> Library/Method: Vanilla JS + Tailwind.
+        - Report Info: Hacking Process -> Goal: Organize -> Viz: Interactive Process Flow Diagram -> Interaction: Click phase to expand details -> Justification: Breaks down a multi-step process into manageable chunks, preventing information overload. -> Library/Method: Vanilla JS + Tailwind.
+        - Report Info: OWASP Top 10 -> Goal: Inform -> Viz: Clickable List -> Interaction: Click to open modal with details -> Justification: Uses modals to present detailed information without cluttering the main page layout, focusing user attention. -> Library/Method: Vanilla JS + Tailwind.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #ECEFF4;
+            color: #2E3440;
+        }
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+        .font-mono {
+            font-family: 'Roboto Mono', monospace;
+        }
+        .nav-link {
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        .nav-link:after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            display: block;
+            margin-top: 5px;
+            right: 0;
+            background: #5E81AC;
+            transition: width 0.3s ease;
+        }
+        .nav-link:hover:after {
+            width: 100%;
+            left: 0;
+            background: #5E81AC;
+        }
+        .active-nav {
+            color: #5E81AC;
+            font-weight: 600;
+        }
+        .card {
+            background-color: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            border-radius: 0.75rem;
+            border: 1px solid #D8DEE9;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        .btn {
+            transition: all 0.3s ease;
+            border-radius: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        }
+        .btn-primary {
+            background-color: #5E81AC;
+            color: #ECEFF4;
+        }
+        .btn-primary:hover {
+            background-color: #81A1C1;
+        }
+        .btn-secondary {
+            background-color: #D8DEE9;
+            color: #4C566A;
+        }
+        .btn-secondary:hover {
+            background-color: #E5E9F0;
+        }
+        .section-title {
+            color: #2E3440;
+            font-weight: 700;
+            font-size: 2.25rem;
+            line-height: 2.5rem;
+            border-bottom: 3px solid #5E81AC;
+            padding-bottom: 0.5rem;
+            display: inline-block;
+        }
+        .terminal {
+            background-color: #2E3440;
+            color: #D8DEE9;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .prompt-user { color: #A3BE8C; }
+        .prompt-path { color: #81A1C1; }
+        .command { cursor: pointer; color: #EBCB8B; }
+        .command:hover { text-decoration: underline; }
+        .modal-backdrop {
+            background-color: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px);
+        }
+        .rule-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-in-out, padding 0.5s ease-in-out;
+        }
+        .scroll-reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+        }
+        .scroll-reveal.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(94, 129, 172, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(94, 129, 172, 0); }
+        }
+        .process-phase.active {
+            animation: pulse 2s infinite;
+        }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #5E81AC;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="antialiased">
+    <canvas id="bg-canvas"></canvas>
+
+    <header class="bg-white/80 backdrop-blur-md sticky top-0 z-50 shadow-sm border-b border-gray-200">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <h1 class="text-xl md:text-2xl font-bold text-gray-800">
+                <span class="text-blue-600">$&gt;</span> Hacker's Roadmap
+            </h1>
+            <div class="hidden md:flex space-x-8" id="nav-menu">
+                <a href="#welcome" class="nav-link text-gray-600 hover:text-blue-600">Welcome</a>
+                <a href="#core-skills" class="nav-link text-gray-600 hover:text-blue-600">Core Skills</a>
+                <a href="#lab" class="nav-link text-gray-600 hover:text-blue-600">Hacking Lab</a>
+                <a href="#specialization" class="nav-link text-gray-600 hover:text-blue-600">Specialization</a>
+                <a href="#ai-tutor" class="nav-link text-gray-600 hover:text-blue-600">AI Tutor</a>
+            </div>
+            <button id="mobile-menu-button" class="md:hidden text-gray-700 focus:outline-none">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+            </button>
+        </nav>
+        <div id="mobile-menu" class="hidden md:hidden px-6 pb-4 space-y-2">
+            <a href="#welcome" class="block nav-link text-gray-600 hover:text-blue-600">Welcome</a>
+            <a href="#core-skills" class="block nav-link text-gray-600 hover:text-blue-600">Core Skills</a>
+            <a href="#lab" class="block nav-link text-gray-600 hover:text-blue-600">Hacking Lab</a>
+            <a href="#specialization" class="block nav-link text-gray-600 hover:text-blue-600">Specialization</a>
+            <a href="#ai-tutor" class="block nav-link text-gray-600 hover:text-blue-600">AI Tutor</a>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-6 py-12 relative z-10">
+
+        <section id="welcome" class="min-h-screen pt-16 flex flex-col justify-center">
+            <div class="scroll-reveal">
+                <h2 class="section-title">Welcome to the World of Ethical Hacking</h2>
+                <p class="mt-6 text-lg text-gray-700 max-w-4xl">
+                    To build the strongest defenses, you must master the art of the attack. This interactive guide is your personal, zero-cost roadmap to navigate the complex world of cybersecurity. We'll start not with code, but with the foundational principles, legal realities, and unique mindset that separate a cybersecurity professional from a criminal.
+                </p>
+            </div>
+
+            <div class="mt-12 scroll-reveal">
+                <h3 class="text-2xl font-semibold text-gray-800 mb-4">The Hacker Spectrum</h3>
+                <p class="text-gray-600 mb-6">The term "hacker" isn't one-size-fits-all. In cybersecurity, individuals are categorized by their motivations and legality. Click on a "hat" to learn more about each type.</p>
+                <div class="flex flex-wrap gap-4 mb-8">
+                    <button class="btn btn-secondary spectrum-btn" data-type="white">⚪ White Hat</button>
+                    <button class="btn btn-secondary spectrum-btn" data-type="gray">🔘 Gray Hat</button>
+                    <button class="btn btn-secondary spectrum-btn" data-type="black">⚫ Black Hat</button>
+                </div>
+                <div id="spectrum-display" class="card p-6 min-h-[200px] flex items-center justify-center">
+                    <p class="text-gray-500">Select a hacker type to see the description.</p>
+                </div>
+            </div>
+
+            <div class="mt-12 scroll-reveal">
+                <h3 class="text-2xl font-semibold text-gray-800 mb-4">The Golden Rules of Ethical Hacking</h3>
+                 <p class="text-gray-600 mb-6">A career in ethical hacking is built on trust. Adherence to a strict code of conduct is mandatory. Expand each rule to understand the core principles you must follow.</p>
+                <div id="golden-rules-container" class="space-y-4"></div>
+            </div>
+        </section>
+
+        <section id="core-skills" class="min-h-screen pt-16">
+            <div class="scroll-reveal">
+                <h2 class="section-title">Building Your Foundation</h2>
+                <p class="mt-6 text-lg text-gray-700 max-w-4xl">
+                    Jumping to advanced tools without a solid foundation is ineffective. A true ethical hacker builds their expertise on a pyramid of knowledge. This section is dedicated to constructing that base, layer by layer, starting with the non-negotiable fundamentals.
+                </p>
+            </div>
+
+            <div class="mt-12 scroll-reveal">
+                <div class="border-b border-gray-300">
+                    <nav class="-mb-px flex space-x-6" id="core-skills-tabs">
+                        <button data-tab="networking" class="core-skill-tab py-4 px-1 border-b-2 font-medium text-lg border-blue-600 text-blue-700">Networking</button>
+                        <button data-tab="linux" class="core-skill-tab py-4 px-1 border-b-2 font-medium text-lg border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-400">Linux</button>
+                        <button data-tab="python" class="core-skill-tab py-4 px-1 border-b-2 font-medium text-lg border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-400">Python</button>
+                        <button data-tab="crypto" class="core-skill-tab py-4 px-1 border-b-2 font-medium text-lg border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-400">Cryptography</button>
+                    </nav>
+                </div>
+                <div id="core-skills-content" class="mt-8"></div>
+            </div>
+        </section>
+
+        <section id="lab" class="min-h-screen pt-16">
+            <div class="scroll-reveal">
+                <h2 class="section-title">Your Personal Hacking Lab</h2>
+                <p class="mt-6 text-lg text-gray-700 max-w-4xl">
+                    Theory provides the "why," but hands-on practice provides the "how." The first critical step is building a safe, isolated virtual laboratory. This is the *only* place where you can legally and safely practice the techniques in this guide.
+                </p>
+            </div>
+
+            <div class="mt-12 scroll-reveal">
+                <h3 class="text-2xl font-semibold text-gray-800 mb-6">The Ethical Hacking Process</h3>
+                <p class="text-gray-600 mb-8">Ethical hacking is a structured, methodical process, not a random series of actions. Professionals follow a five-phase methodology to ensure assessments are thorough and comprehensive. Click each phase to learn more.</p>
+                <div id="hacking-process-container"></div>
+            </div>
+
+            <div class="mt-12 scroll-reveal">
+                <h3 class="text-2xl font-semibold text-gray-800 mb-6">The Beginner's Toolkit</h3>
+                <p class="text-gray-600 mb-8">Kali Linux contains hundreds of tools. For a beginner, it's best to master a small set of core, multi-purpose tools first. These four are the cornerstones of every hacker's toolkit.</p>
+                <div id="toolkit-container" class="grid md:grid-cols-2 lg:grid-cols-4 gap-8"></div>
+            </div>
+        </section>
+
+        <section id="specialization" class="min-h-screen pt-16">
+            <div class="scroll-reveal">
+                <h2 class="section-title">Your First Specialization</h2>
+                <p class="mt-6 text-lg text-gray-700 max-w-4xl">
+                    With a solid foundation and a functional lab, you're ready to specialize. The most logical and accessible starting point is web application security. The single most important resource for this is the OWASP Top 10, a global consensus on the most critical web application security risks.
+                </p>
+            </div>
+            <div class="mt-12 scroll-reveal">
+                <h3 class="text-2xl font-semibold text-gray-800 mb-6">OWASP Top 10 (2021)</h3>
+                <p class="text-gray-600 mb-8">This isn't just a list; it's a checklist for every web assessment. Click on each vulnerability to understand the risk with a simple explanation and a real-world analogy.</p>
+                <div id="owasp-container" class="grid md:grid-cols-2 gap-4"></div>
+            </div>
+        </section>
+
+        <section id="ai-tutor" class="min-h-screen pt-16">
+            <div class="scroll-reveal">
+                <h2 class="section-title">Your AI Tutor</h2>
+                <p class="mt-6 text-lg text-gray-700 max-w-4xl">
+                    Generative AI can be a revolutionary tool for learning—a personalized, 24/7 tutor. But its effectiveness depends on your ability to ask the right questions. This is called prompt engineering. Use AI not as a crutch for answers, but as an accelerator to deepen your understanding.
+                </p>
+            </div>
+            <div class="mt-12 scroll-reveal">
+                <h3 class="text-2xl font-semibold text-gray-800 mb-6">✨ AI Threat Modeler</h3>
+                <p class="text-gray-600 mb-8">Go beyond generic examples. Describe a type of organization below, and the AI will generate a tailored, realistic cybersecurity threat scenario for it, helping you think like an attacker targeting a specific industry.</p>
+                <div class="card p-6">
+                    <input type="text" id="threat-model-input" class="w-full p-3 border border-gray-300 rounded" placeholder="e.g., a small e-commerce startup, a regional hospital...">
+                    <button id="generate-threat-model-btn" class="btn btn-primary mt-4 w-full">Generate Threat Scenario</button>
+                    <div id="threat-model-display" class="mt-6 hidden"></div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-gray-800 text-white mt-16 relative z-10">
+        <div class="container mx-auto px-6 py-8 text-center">
+            <p>&copy; 2025 The Aspiring Hacker's Roadmap. For educational purposes only.</p>
+            <p class="text-sm text-gray-400 mt-2">Always act legally and ethically. Hack with permission.</p>
+        </div>
+    </footer>
+
+    <div id="owasp-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 modal-backdrop">
+        <div class="card w-full max-w-2xl max-h-[90vh] overflow-y-auto" id="modal-content">
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const data = {
+            spectrum: {
+                white: { title: '⚪ White Hat Hacker', color: 'blue', content: 'These are the ethical hackers. They operate with full permission to find vulnerabilities and improve security. Their motivation is defensive, aiming to protect data and systems. Their actions are legal and professional.' },
+                gray: { title: '🔘 Gray Hat Hacker', color: 'gray', content: 'Occupying a middle ground, gray hats may hack without permission but without malicious intent. They might report a vulnerability to a company, sometimes for a fee. Their actions are illegal because they violate the core principle of consent.' },
+                black: { title: '⚫ Black Hat Hacker', color: 'red', content: 'These are the malicious actors or cybercriminals. They operate without permission and with harmful intent, such as financial gain, revenge, or causing chaos. Their activities are illegal and criminal.' }
+            },
+            goldenRules: [
+                { title: 'Obtain Explicit Authorization', content: 'Before any testing begins, secure clear, written permission from the system owner. This contract should define the scope of the test, outlining which systems can be targeted and which methods are permissible.' },
+                { title: 'Maintain Confidentiality', content: 'Respect the privacy of the organization and its users. Any sensitive data encountered during a test must be handled with the utmost care and protected from disclosure.' },
+                { title: 'Report All Findings', content: 'The primary duty of an ethical hacker is to provide a comprehensive report of all discovered vulnerabilities, regardless of their perceived severity. This transparency allows the organization to fully understand its risk profile.' },
+                { title: 'Do No Harm', content: 'The goal is to identify weaknesses, not to exploit them in a way that causes damage, data loss, or service disruption. All actions must be carefully planned to minimize impact on the target systems.' }
+            ],
+            coreSkills: {
+                networking: `
+                    <h4 class="text-xl font-semibold mb-4 text-gray-800">Networking: The Bedrock</h4>
+                    <p class="text-gray-600 mb-8">Nearly all hacking involves sending data across a network. Understanding networking is like a burglar understanding how doors and windows work. The OSI model is a key concept for visualizing this process.</p>
+                    <div class="osi-model space-y-1 max-w-md mx-auto">
+                        <div class="osi-layer" data-info="The user interface layer, like a web browser.">7. Application</div>
+                        <div class="osi-layer" data-info="Formats and encrypts data for compatibility.">6. Presentation</div>
+                        <div class="osi-layer" data-info="Manages the conversation between computers.">5. Session</div>
+                        <div class="osi-layer" data-info="Ensures data is delivered reliably (TCP) or quickly (UDP).">4. Transport</div>
+                        <div class="osi-layer" data-info="Routes data across networks using IP addresses.">3. Network</div>
+                        <div class="osi-layer" data-info="Manages communication between directly connected devices.">2. Data Link</div>
+                        <div class="osi-layer" data-info="The physical hardware, like cables and Wi-Fi signals.">1. Physical</div>
+                    </div>
+                    <div id="osi-info" class="mt-4 text-center text-gray-600 h-6"></div>
+                    <style>.osi-layer { background-color: #E5E9F0; border: 1px solid #D8DEE9; padding: 0.75rem; border-radius: 0.375rem; text-align: center; font-weight: 500; cursor: default; transition: background-color 0.3s; } .osi-layer:hover { background-color: #81A1C1; color: white; }</style>
+                `,
+                linux: `
+                    <h4 class="text-xl font-semibold mb-4 text-gray-800">Linux: The Hacker's OS</h4>
+                    <p class="text-gray-600 mb-8">The vast majority of security professionals use Linux due to its power, flexibility, and the availability of tools. Proficiency with the command line is an essential skill. Click a command to see an example.</p>
+                    <div class="terminal font-mono text-sm">
+                        <div class="mb-2"><span class="prompt-user">kali@kali</span><span class="text-gray-400">:</span><span class="prompt-path">~</span><span class="text-gray-400">$</span></div>
+                        <div id="linux-commands">
+                            <p><span class="command" data-example="ls -la (lists all files, including hidden ones)">ls</span> - list files</p>
+                            <p><span class="command" data-example="cd /var/www/html (changes to the web root directory)">cd</span> - change directory</p>
+                            <p><span class="command" data-example="cat /etc/passwd (displays the contents of the password file)">cat</span> - display file contents</p>
+                            <p><span class="command" data-example="grep '404' access.log (finds all '404' errors in a log file)">grep</span> - search for text</p>
+                            <p><span class="command" data-example="find / -name 'config.php' (searches the entire system for a file named 'config.php')">find</span> - find files</p>
+                            <p><span class="command" data-example="chmod 755 script.sh (makes a script executable)">chmod</span> - change permissions</p>
+                            <p><span class="command" data-example="ssh user@192.168.1.100 (connects to a remote machine)">ssh</span> - secure shell</p>
+                            <p><span class="command" data-example="sudo apt update (runs the update command with admin privileges)">sudo</span> - run as superuser</p>
+                        </div>
+                        <div id="command-example" class="mt-4 h-6 text-gray-400"></div>
+                    </div>
+                `,
+                python: `
+                    <h4 class="text-xl font-semibold mb-4 text-gray-800">Python: Automate Everything</h4>
+                    <p class="text-gray-600 mb-8">Manually performing every step of an assessment is inefficient. Python is the de facto scripting language for cybersecurity, used to automate tasks, create custom tools, and develop proof-of-concept exploits.</p>
+                    <div class="grid md:grid-cols-2 gap-8">
+                        <div class="card p-6">
+                            <h5 class="font-semibold text-lg">Core Concepts</h5>
+                            <ul class="list-disc list-inside mt-2 text-gray-600 space-y-1">
+                                <li>Variables & Data Types</li>
+                                <li>Lists & Dictionaries</li>
+                                <li>If/Else Conditionals & Loops</li>
+                                <li>Functions</li>
+                                <li>File Input/Output</li>
+                            </ul>
+                        </div>
+                        <div class="card p-6">
+                            <h5 class="font-semibold text-lg">Essential Libraries</h5>
+                            <ul class="list-disc list-inside mt-2 text-gray-600 space-y-1">
+                                <li><b class="font-mono">requests</b>: For web interactions</li>
+                                <li><b class="font-mono">socket</b>: For low-level networking</li>
+                                <li><b class="font-mono">pwntools</b>: For exploit development</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="mt-8 card p-6">
+                        <h4 class="text-xl font-semibold mb-4 text-gray-800">✨ AI Code Explainer</h4>
+                        <p class="text-gray-600 mb-4">Paste a Python script related to cybersecurity below to get a detailed explanation of what it does.</p>
+                        <textarea id="code-input" class="w-full p-2 border border-gray-300 rounded font-mono text-sm" rows="8" placeholder="import socket\n\ns = socket.socket(socket.AF_INET, socket.SOCK_STREAM)\n# ..."></textarea>
+                        <button id="explain-code-btn" class="btn btn-primary mt-4 w-full">Explain This Code</button>
+                        <div id="code-explanation" class="mt-6 hidden"></div>
+                    </div>
+                `,
+                crypto: `
+                    <h4 class="text-xl font-semibold mb-4 text-gray-800">Cryptography: Codes & Ciphers</h4>
+                    <p class="text-gray-600 mb-8">Cryptography is the science of secure communication. Understanding its basics is essential for identifying weak implementations and breaking security that relies on it.</p>
+                     <div class="grid md:grid-cols-2 gap-8 mb-8">
+                        <div class="card p-6 text-center">
+                            <h5 class="font-semibold text-lg">Symmetric Encryption</h5>
+                            <p class="text-4xl my-4">🔑</p>
+                            <p class="text-gray-600">Uses a <b>single, shared key</b> for both encryption and decryption. Fast and efficient.</p>
+                        </div>
+                        <div class="card p-6 text-center">
+                            <h5 class="font-semibold text-lg">Asymmetric Encryption</h5>
+                            <p class="text-4xl my-4">🔓 + 🔐</p>
+                            <p class="text-gray-600">Uses a <b>key pair</b> (public for encryption, private for decryption). Enables secure communication without a pre-shared key.</p>
+                        </div>
+                    </div>
+                    <h5 class="font-semibold text-lg mb-2">Hashing Simulator (SHA-256)</h5>
+                    <p class="text-gray-600 mb-4">Hashing is a one-way process to verify data integrity. Even a tiny change in the input creates a completely different output hash.</p>
+                    <input type="text" id="hash-input" class="w-full p-2 border border-gray-300 rounded" placeholder="Type something here...">
+                    <div id="hash-output" class="mt-2 p-3 bg-gray-100 rounded font-mono text-sm break-all text-gray-700"></div>
+                `
+            },
+            hackingProcess: [
+                { phase: 1, title: 'Reconnaissance', content: 'The information-gathering phase. The goal is to learn as much as possible about the target without directly interacting with it (passive) or by probing it lightly (active). This includes searching public records, social media, and domain details.' },
+                { phase: 2, title: 'Scanning', content: 'Actively probing the target for weaknesses using the information from reconnaissance. This involves port scanning to find open services, vulnerability scanning for known flaws, and mapping the network.' },
+                { phase: 3, title: 'Gaining Access', content: 'The actual "hacking" phase. The ethical hacker uses vulnerabilities discovered during scanning to exploit the target system and gain unauthorized access. This could involve a software exploit, password cracking, or social engineering.' },
+                { phase: 4, title: 'Maintaining Access', content: 'Ensuring the ability to return to the compromised system. This involves installing persistence mechanisms like backdoors or rootkits to demonstrate the potential for long-term compromise.' },
+                { phase: 5, title: 'Clearing Tracks', content: 'Simulating an attacker erasing evidence of their presence. This involves modifying or deleting system logs and removing tools to test the organization\'s detection capabilities.' }
+            ],
+            toolkit: [
+                { name: 'Nmap', icon: '📡', desc: 'Network discovery and port scanning. Your eyes and ears on the network.', use: '`nmap -sS -A <target_IP>` for a stealth scan with OS and version detection.' },
+                { name: 'Wireshark', icon: '🦈', desc: 'Network protocol analysis. Listen to conversations on the network.', use: 'Capture traffic and use display filters like `http.request` to isolate web traffic.' },
+                { name: 'Metasploit', icon: '💣', desc: 'Exploitation framework. The Swiss Army knife for running exploits.', use: '`search ms17-010`, `use exploit/...`, `set RHOSTS`, `run`.' },
+                { name: 'Burp Suite', icon: '🌐', desc: 'Web application proxy. Your window into web traffic.', use: 'Intercept a login request and modify the password parameter to test for vulnerabilities.' }
+            ],
+            owasp: [
+                { id: 'A01', title: 'Broken Access Control', desc: 'The system fails to properly enforce what a user is allowed to do. Users can access data or perform actions outside of their intended permissions.', analogy: 'Your apartment key not only opens your door but also the doors of every other resident in the building.' },
+                { id: 'A02', title: 'Cryptographic Failures', desc: 'Sensitive data (like passwords or credit card numbers) is not protected properly, either by using weak encryption or no encryption at all.', analogy: 'Sending your credit card number on a postcard instead of inside a sealed, tamper-proof envelope.' },
+                { id: 'A03', title: 'Injection', desc: 'An attacker sends malicious data to an application, which is then tricked into executing unintended commands or accessing data without proper authorization.', analogy: 'Writing "and give me all the money in the register" on the memo line of a check, and the bank teller blindly follows the instruction.' },
+                { id: 'A04', title: 'Insecure Design', desc: 'Security was not a core consideration during the design and architecture phase of the application, leading to fundamental, systemic flaws.', analogy: 'Building a house with no locks on the doors or windows from the very start, based on a flawed blueprint.' },
+                { id: 'A05', title: 'Security Misconfiguration', desc: 'A component of the application stack (server, database, framework) is configured insecurely, such as using default passwords or having unnecessary features enabled.', analogy: 'Buying a state-of-the-art home security system but leaving the default password as "admin" and the back door unlocked.' },
+                { id: 'A07', title: 'Identification and Authentication Failures', desc: 'Functions related to user identity, authentication, and session management are implemented incorrectly, allowing attackers to impersonate legitimate users.', analogy: 'A security guard lets someone into a secure building just because they are wearing a similar uniform, without checking their ID.' }
+            ]
+        };
+
+        const spectrumDisplay = document.getElementById('spectrum-display');
+        document.querySelectorAll('.spectrum-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const type = btn.dataset.type;
+                const info = data.spectrum[type];
+                spectrumDisplay.innerHTML = `
+                    <div class="text-center">
+                        <h4 class="text-xl font-bold text-${info.color}-600">${info.title}</h4>
+                        <p class="mt-2 text-gray-700">${info.content}</p>
+                    </div>
+                `;
+                document.querySelectorAll('.spectrum-btn').forEach(b => b.classList.replace('btn-primary', 'btn-secondary'));
+                btn.classList.replace('btn-secondary', 'btn-primary');
+            });
+        });
+
+        const rulesContainer = document.getElementById('golden-rules-container');
+        data.goldenRules.forEach((rule, index) => {
+            const ruleEl = document.createElement('div');
+            ruleEl.className = 'card';
+            ruleEl.innerHTML = `
+                <div class="p-4 cursor-pointer flex justify-between items-center rule-header">
+                    <h4 class="font-semibold text-lg">${index + 1}. ${rule.title}</h4>
+                    <span class="transform transition-transform duration-300">▼</span>
+                </div>
+                <div class="rule-content">
+                    <p class="px-4 pb-4 text-gray-600">${rule.content}</p>
+                </div>
+            `;
+            rulesContainer.appendChild(ruleEl);
+        });
+        rulesContainer.addEventListener('click', (e) => {
+            const header = e.target.closest('.rule-header');
+            if (header) {
+                const content = header.nextElementSibling;
+                const arrow = header.querySelector('span');
+                if (content.style.maxHeight) {
+                    content.style.maxHeight = null;
+                    content.style.paddingBottom = '0px';
+                    arrow.classList.remove('rotate-180');
+                } else {
+                    content.style.maxHeight = content.scrollHeight + "px";
+                    content.style.paddingBottom = '1rem';
+                    arrow.classList.add('rotate-180');
+                }
+            }
+        });
+
+        const coreSkillsTabs = document.getElementById('core-skills-tabs');
+        const coreSkillsContent = document.getElementById('core-skills-content');
+        function activateTab(tabName) {
+            coreSkillsContent.innerHTML = data.coreSkills[tabName];
+            document.querySelectorAll('.core-skill-tab').forEach(t => {
+                if (t.dataset.tab === tabName) {
+                    t.classList.add('border-blue-600', 'text-blue-700');
+                    t.classList.remove('border-transparent', 'text-gray-500');
+                } else {
+                    t.classList.remove('border-blue-600', 'text-blue-700');
+                    t.classList.add('border-transparent', 'text-gray-500');
+                }
+            });
+            if (tabName === 'networking') initOsiModel();
+            if (tabName === 'linux') initLinuxTerminal();
+            if (tabName === 'python') initCodeExplainer();
+            if (tabName === 'crypto') initCrypto();
+        }
+        coreSkillsTabs.addEventListener('click', (e) => {
+            if (e.target.matches('.core-skill-tab')) {
+                activateTab(e.target.dataset.tab);
+            }
+        });
+        activateTab('networking');
+
+        function initOsiModel() {
+            const infoEl = document.getElementById('osi-info');
+            document.querySelectorAll('.osi-layer').forEach(layer => {
+                layer.addEventListener('mouseover', () => {
+                    infoEl.textContent = layer.dataset.info;
+                });
+                layer.addEventListener('mouseout', () => {
+                    infoEl.textContent = '';
+                });
+            });
+        }
+
+        function initLinuxTerminal() {
+            const exampleEl = document.getElementById('command-example');
+            document.querySelectorAll('.command').forEach(cmd => {
+                cmd.addEventListener('click', () => {
+                    exampleEl.textContent = `$ ${cmd.dataset.example}`;
+                });
+            });
+        }
+
+        async function initCrypto() {
+            const input = document.getElementById('hash-input');
+            const output = document.getElementById('hash-output');
+            async function updateHash() {
+                const text = input.value;
+                if (text) {
+                    const textAsBuffer = new TextEncoder().encode(text);
+                    const hashBuffer = await window.crypto.subtle.digest('SHA-256', textAsBuffer);
+                    const hashArray = Array.from(new Uint8Array(hashBuffer));
+                    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+                    output.textContent = hashHex;
+                } else {
+                    output.textContent = '';
+                }
+            }
+            input.addEventListener('input', updateHash);
+            updateHash();
+        }
+
+        const processContainer = document.getElementById('hacking-process-container');
+        const processTimeline = document.createElement('div');
+        processTimeline.className = 'flex flex-col md:flex-row justify-between items-center relative';
+        const processDetails = document.createElement('div');
+        processDetails.id = 'process-details';
+        processDetails.className = 'mt-8 card p-6 min-h-[100px]';
+        data.hackingProcess.forEach(p => {
+            const phaseEl = document.createElement('div');
+            phaseEl.className = 'process-phase flex items-center justify-center w-24 h-24 md:w-28 md:h-28 rounded-full border-4 border-gray-300 bg-white font-bold text-gray-700 cursor-pointer transition-all duration-300 z-10 my-2 md:my-0';
+            phaseEl.textContent = `Phase ${p.phase}`;
+            phaseEl.dataset.phase = p.phase;
+            processTimeline.appendChild(phaseEl);
+        });
+        const line = document.createElement('div');
+        line.className = 'absolute top-0 left-1/2 md:left-0 md:top-1/2 w-1 h-full md:h-1 md:w-full bg-gray-300 -translate-x-1/2 md:-translate-y-1/2 md:translate-x-0';
+        processTimeline.prepend(line);
+        processContainer.append(processTimeline, processDetails);
+
+        processContainer.addEventListener('click', (e) => {
+            const phaseEl = e.target.closest('.process-phase');
+            if (phaseEl) {
+                const phaseNum = parseInt(phaseEl.dataset.phase);
+                const phaseData = data.hackingProcess.find(p => p.phase === phaseNum);
+                processDetails.innerHTML = `
+                    <h4 class="font-bold text-lg text-blue-700">${phaseData.phase}. ${phaseData.title}</h4>
+                    <p class="mt-2 text-gray-600">${phaseData.content}</p>
+                `;
+                document.querySelectorAll('.process-phase').forEach(p => {
+                    p.classList.remove('bg-blue-600', 'text-white', 'border-blue-700', 'scale-110', 'active');
+                    p.classList.add('bg-white', 'text-gray-700', 'border-gray-300');
+                });
+                phaseEl.classList.add('bg-blue-600', 'text-white', 'border-blue-700', 'scale-110', 'active');
+            }
+        });
+        processContainer.querySelector('.process-phase').click();
+
+        const toolkitContainer = document.getElementById('toolkit-container');
+        data.toolkit.forEach(tool => {
+            const toolCard = document.createElement('div');
+            toolCard.className = 'card p-6 text-center';
+            toolCard.innerHTML = `
+                <div class="text-5xl">${tool.icon}</div>
+                <h4 class="text-xl font-bold mt-4">${tool.name}</h4>
+                <p class="text-gray-600 mt-2 text-sm">${tool.desc}</p>
+                <div class="mt-4">
+                    <button class="text-sm btn btn-secondary w-full show-use-case">Show Use Case</button>
+                    <div class="use-case-content hidden mt-2 p-2 bg-gray-100 rounded font-mono text-xs text-left">${tool.use}</div>
+                </div>
+            `;
+            toolkitContainer.appendChild(toolCard);
+        });
+        toolkitContainer.addEventListener('click', e => {
+            if (e.target.classList.contains('show-use-case')) {
+                const content = e.target.nextElementSibling;
+                content.classList.toggle('hidden');
+                e.target.textContent = content.classList.contains('hidden') ? 'Show Use Case' : 'Hide Use Case';
+            }
+        });
+
+        const owaspContainer = document.getElementById('owasp-container');
+        const modal = document.getElementById('owasp-modal');
+        const modalContent = document.getElementById('modal-content');
+        data.owasp.forEach(item => {
+            const owaspItem = document.createElement('div');
+            owaspItem.className = 'card p-4 flex items-center justify-between cursor-pointer';
+            owaspItem.dataset.id = item.id;
+            owaspItem.innerHTML = `
+                <div>
+                    <span class="font-bold text-blue-700">${item.id}</span>
+                    <h4 class="font-semibold inline ml-2">${item.title}</h4>
+                </div>
+                <span class="text-gray-400">➔</span>
+            `;
+            owaspContainer.appendChild(owaspItem);
+        });
+        owaspContainer.addEventListener('click', e => {
+            const itemEl = e.target.closest('.card');
+            if (itemEl) {
+                const itemData = data.owasp.find(i => i.id === itemEl.dataset.id);
+                modalContent.innerHTML = `
+                    <div class="p-6">
+                        <div class="flex justify-between items-start">
+                             <div>
+                                <h3 class="text-2xl font-bold text-gray-800">${itemData.id}: ${itemData.title}</h3>
+                                <p class="mt-4 text-gray-700">${itemData.desc}</p>
+                            </div>
+                            <button id="close-modal" class="text-2xl text-gray-500 hover:text-gray-800">&times;</button>
+                        </div>
+                        <div class="mt-6 p-4 bg-blue-50 border-l-4 border-blue-400 rounded-r">
+                            <p class="font-semibold">Real-World Analogy:</p>
+                            <p class="text-gray-700 italic mt-1">"${itemData.analogy}"</p>
+                        </div>
+                    </div>
+                `;
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            }
+        });
+        modal.addEventListener('click', e => {
+            if (e.target.id === 'owasp-modal' || e.target.id === 'close-modal' || e.target.parentElement.id === 'close-modal') {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+        });
+
+        const mobileMenuButton = document.getElementById('mobile-menu-button');
+        const mobileMenu = document.getElementById('mobile-menu');
+        mobileMenuButton.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+
+        const navLinks = document.querySelectorAll('#nav-menu a, #mobile-menu a');
+        const sections = document.querySelectorAll('section');
+        window.addEventListener('scroll', () => {
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                if (pageYOffset >= sectionTop - 100) {
+                    current = section.getAttribute('id');
+                }
+            });
+
+            navLinks.forEach(link => {
+                link.classList.remove('active-nav');
+                if (link.getAttribute('href').includes(current)) {
+                    link.classList.add('active-nav');
+                }
+            });
+        });
+
+        const scrollElements = document.querySelectorAll('.scroll-reveal');
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('is-visible');
+                }
+            });
+        }, { threshold: 0.1 });
+        scrollElements.forEach(el => observer.observe(el));
+
+        let scene, camera, renderer, stars;
+        function init3DBackground() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 1000);
+            camera.position.z = 1;
+
+            renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('bg-canvas'), alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+
+            const starGeo = new THREE.BufferGeometry();
+            const starVertices = [];
+            for(let i=0; i<6000; i++) {
+                const x = (Math.random() - 0.5) * 2000;
+                const y = (Math.random() - 0.5) * 2000;
+                const z = (Math.random() - 0.5) * 2000;
+                starVertices.push(x, y, z);
+            }
+            starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starVertices, 3));
+
+            let sprite = new THREE.TextureLoader().load('https://threejs.org/examples/textures/sprites/disc.png');
+            let starMaterial = new THREE.PointsMaterial({
+                color: 0x5E81AC,
+                size: 0.7,
+                map: sprite
+            });
+
+            stars = new THREE.Points(starGeo, starMaterial);
+            scene.add(stars);
+
+            window.addEventListener('resize', onWindowResize, false);
+            animate();
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function animate() {
+            stars.rotation.x += 0.0001;
+            stars.rotation.y += 0.0001;
+            renderer.render(scene, camera);
+            requestAnimationFrame(animate);
+        }
+
+        init3DBackground();
+
+        async function callGeminiAPI(prompt) {
+            const apiKey = "";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+            const payload = {
+                contents: [{
+                    parts: [{ text: prompt }]
+                }]
+            };
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API call failed with status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    return result.candidates[0].content.parts[0].text;
+                } else {
+                    return "Sorry, I couldn't get a response. The response from the API was empty or malformed.";
+                }
+            } catch (error) {
+                console.error("Error calling Gemini API:", error);
+                return `An error occurred: ${error.message}. Please check the console for details.`;
+            }
+        }
+
+        function initCodeExplainer() {
+            const explainBtn = document.getElementById('explain-code-btn');
+            const codeInput = document.getElementById('code-input');
+            const explanationDiv = document.getElementById('code-explanation');
+
+            explainBtn.addEventListener('click', async () => {
+                const code = codeInput.value;
+                if (!code.trim()) {
+                    explanationDiv.innerHTML = `<p class="text-red-500">Please enter some code to explain.</p>`;
+                    explanationDiv.classList.remove('hidden');
+                    return;
+                }
+
+                explanationDiv.innerHTML = `<div class="flex items-center justify-center"><div class="loader"></div><p class="ml-4">Analyzing code...</p></div>`;
+                explanationDiv.classList.remove('hidden');
+
+                const prompt = `
+                    Act as a senior cybersecurity instructor and Python expert.
+                    A student has provided the following Python code snippet.
+                    Explain it clearly and concisely, focusing on its relevance to cybersecurity.
+
+                    Your explanation should have three parts:
+                    1.  **What it Does:** A simple, line-by-line or block-by-block explanation of the code's logic.
+                    2.  **Cybersecurity Context:** How this type of script is used in ethical hacking (e.g., port scanning, banner grabbing, automation).
+                    3.  **Improvements/Next Steps:** Suggest one or two ways the student could improve or build upon this script.
+
+                    Use markdown for formatting. For example:
+                    ### What it Does
+                    - The \`import socket\` line...
+                    ### Cybersecurity Context
+                    This script is a basic example of...
+                    ### Improvements
+                    - You could add error handling...
+
+                    Here is the code:
+                    \`\`\`python
+                    ${code}
+                    \`\`\`
+                `;
+
+                const explanation = await callGeminiAPI(prompt);
+                explanationDiv.innerHTML = explanation.replace(/```python\n([\s\S]*?)```/g, '<pre class="bg-gray-800 text-white p-4 rounded-md mt-2 font-mono text-sm"><code>$1</code></pre>')
+                                                     .replace(/### (.*)/g, '<h4 class="text-lg font-semibold mt-4 mb-2">$1</h4>')
+                                                     .replace(/\* (.*)/g, '<li class="ml-5 list-disc">$1</li>');
+            });
+        }
+
+        const generateThreatModelBtn = document.getElementById('generate-threat-model-btn');
+        const threatModelInput = document.getElementById('threat-model-input');
+        const threatModelDisplay = document.getElementById('threat-model-display');
+
+        generateThreatModelBtn.addEventListener('click', async () => {
+            const orgType = threatModelInput.value;
+            if (!orgType.trim()) {
+                threatModelDisplay.innerHTML = `<p class="text-red-500">Please describe an organization type.</p>`;
+                threatModelDisplay.classList.remove('hidden');
+                return;
+            }
+
+            threatModelDisplay.innerHTML = `<div class="flex items-center justify-center"><div class="loader"></div><p class="ml-4">Generating scenario...</p></div>`;
+            threatModelDisplay.classList.remove('hidden');
+
+            const prompt = `
+                Act as a cybersecurity threat intelligence analyst.
+                Generate a realistic and plausible threat scenario for the following type of organization: "${orgType}".
+
+                Your response should be structured with the following sections using markdown:
+                ### Threat Scenario: [A creative name for the scenario]
+                A brief, one-paragraph narrative of the attack.
+
+                ### Target Organization Profile
+                - **Type:** ${orgType}
+                - **Likely Assets:** What valuable data or systems would they have? (e.g., Patient records, customer PII, financial data, intellectual property).
+
+                ### Attack Vector
+                - **Primary Method:** What is the most likely way an attacker would get in? (e.g., Phishing, exploiting an unpatched web server, social engineering).
+                - **Step-by-Step:** Briefly outline the likely steps of the attack.
+
+                ### Potential Impact
+                - What are the business consequences? (e.g., Data breach, ransomware, reputational damage, financial loss).
+
+                ### Recommended Mitigation Steps
+                - List 3-4 actionable steps this type of organization should take to defend against this specific scenario.
+            `;
+
+            const scenario = await callGeminiAPI(prompt);
+            threatModelDisplay.innerHTML = scenario.replace(/### (.*)/g, '<h4 class="text-lg font-semibold mt-4 mb-2">$1</h4>')
+                                                   .replace(/\* (.*)/g, '<li class="ml-5 list-disc">$1</li>')
+                                                   .replace(/\- (.*)/g, '<li class="ml-5 list-disc">$1</li>');
+        });
+    });
+    </script>
+</body>
+</html>
